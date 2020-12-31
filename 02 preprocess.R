@@ -20,3 +20,11 @@ tab%>%
   group_by(prolific_id,Session)%>%
   summarise(bonus=min(bonus))
 write.csv(bonus,file='maayan_task_prolificID.csv')
+
+####preprocess self-report
+library(dplyr)
+as.matrix(oci[,1:18])
+
+names()
+oci%>%
+  mutate(hoarding<-mean(item_1,item_7))

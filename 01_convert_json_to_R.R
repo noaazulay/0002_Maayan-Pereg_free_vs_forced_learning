@@ -50,7 +50,10 @@ for (i in 1:length(subfolder)){
   oci  <-con_sr_json('oci',oci,curnfolder,files,i) 
   
 }  
-
+wurs[,1:25]<-sapply(wurs[,1:25],function(v) {as.numeric(v)})
+asrs[,1:20]<-sapply(asrs[,1:20],function(v) {as.numeric(v)})
+bis[,1:30] <-sapply(bis[,1:30],function(v) {as.numeric(v)})
+oci[,1:18] <-sapply(oci[,1:18],function(v) {as.numeric(v)})
 save(wurs,file='myfolder/03_data/02_aggregated_data/wurs_raw.Rdata')
 save(asrs,file='myfolder/03_data/02_aggregated_data/asrs_raw.Rdata')
 save(bis,file='myfolder/03_data/02_aggregated_data/bis_raw.Rdata')
