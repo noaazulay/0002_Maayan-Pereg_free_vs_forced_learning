@@ -89,7 +89,7 @@ tab%<>%
          abort       =(rt<200 | rt>4000 | trl==0)
   )%>%
   select(subj,prolific_id,session,blk,trl,reveal,ch,obey,key,
-         rt,rw,rw_1back,obey_1back,reveal_1back,stay.card,stay.obey,stay.key,abort)
+         rt,rw,rw_1back,obey_1back,reveal_1back,stay.card,stay.obey,stay.key,reoffer,abort)
 
 tab<-as.data.frame(tab)
 
@@ -106,7 +106,7 @@ tab%>%
 tab%>%
   group_by(prolific_id)%>%
   summarise(p.stay=mean(stay.key))%>%
-  with(plot(p.stay,ylim=c(0,1))))
+  with(plot(p.stay,ylim=c(0,1)))
 
 # no subjects were ommited based on key and card stickinees.
 # ~8% of the total amount of trials were ommited due to quick or slow rt, and first trial
