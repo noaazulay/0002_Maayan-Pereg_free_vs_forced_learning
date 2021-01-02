@@ -106,7 +106,7 @@ tab%>%
 tab%>%
   group_by(prolific_id)%>%
   summarise(p.stay=mean(stay.key))%>%
-  with(plot(p.stay,ylim=c(0,1))))
+  with(plot(p.stay,ylim=c(0,1)))
 
 # no subjects were ommited based on key and card stickinees.
 # ~8% of the total amount of trials were ommited due to quick or slow rt, and first trial
