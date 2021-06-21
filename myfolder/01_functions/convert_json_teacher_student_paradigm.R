@@ -16,10 +16,11 @@ con_task_json<-function(task_name,datafile,curnfolder,files,subnum) {
                   prob1=unlist(do.call(rbind,df1['FB_probs'][,1])[,1]),
                   prob2=unlist(do.call(rbind,df1['FB_probs'][,1])[,2]),
                   blk=unlist(df1$block_number))
-  
-  df2<-data.frame(rt=unlist(df2['rt']),trl=unlist(df2['trial_num']),trl_cont=unlist(df2['running_trial']),key=unlist(df2['key_press']),mini_block=unlist(df2['mini_block_number']),reveal_teacher_decision=unlist(df2['reveal_decision']),teacher_inst=unlist(df2['teacher_inst']),teacher_choice=unlist(df2['instruction_either']),
+
+    df2<-data.frame(rt=unlist(df2['rt']),trl=unlist(df2['trial_num']),trl_cont=unlist(df2['running_trial']),key=unlist(df2['key_press']),mini_block=unlist(df2['mini_block_number']),reveal_teacher_decision=unlist(df2['reveal_decision']),teacher_inst=unlist(df2['teacher_inst']),teacher_choice=unlist(df2['instruction_either']),
                   frcA=unlist(do.call(rbind,df2['stim_order'][,1])[,1]),frcB=unlist(do.call(rbind,df2['stim_order'][,1])[,2]),
                   ch=unlist(df2['stim_selected']),cond=unlist(df2['current_condition']),
+                  beta_teacher=unlist(df2[,'beta_teacher']),
                   blk=unlist(df2$block_number),
                   Session = unlist(df2$session),
                   ID = unlist(df2$ID),
