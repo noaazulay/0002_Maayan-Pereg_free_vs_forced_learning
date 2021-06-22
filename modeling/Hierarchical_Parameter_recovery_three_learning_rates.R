@@ -12,22 +12,19 @@ library(MASS)
 
 # generate population and subject level parameters -----------------------------------------------------------
 
-Nsubj =10         
+Nsubj =5
 
 #population location parameters
 mu=c(
 alpha.inst.follow       =logit(0.4),
 alpha.inst.oppose       =logit(0.3),
 alpha.free              =logit(0.5),
-alpha.teacher_as_bandit =logit(0.5),
-alpha.reliability       =logit(0.5),
 beta                    =log(3),
-inst.bias               =0.2
 )
 Nparam=length(mu)
 
 #population scale parameters
-tau          =c(.2,.2,.2,.2,.2,.05,0.1) #var vector
+tau          =c(.2,.2,.2,.05) #var vector
 cov_param    =0
 sigma        = diag(tau)
 sigma[!diag(nrow=Nparam)]=cov_param
@@ -39,7 +36,7 @@ auxiliary_parameters = mvrnorm(n = Nsubj, mu = mu, Sigma = sigma)
 
 # run a simulation study -----------------------------------------------------------
 
-source('modeling/sim_functions/simme_tsp.R')
+source('modeling/sim_functions/simme_tsp_three_learning_rate.R')
 
 #main configuration variables for the simulation
 Nalt  =4         #number of alternatives
@@ -50,26 +47,30 @@ cfg=list(      Ntrl  =Ntrl,
                Nalt  =Nalt,
                Noffer=Noffer,
                rndwlk_frac   =as.matrix(read.csv('modeling/sim_functions/rndwlk_4frc_1000trials.csv',header=F)),
-               rndwlk_teacher=rep(15,Ntrl),
+               rndwlk_teacher=rep(100,Ntrl),
                teacher.rate=0.6)
 
 # simulating N agents 
 
-
-
 df<-lapply(1:Nsubj,function(s)   {cfg$subject=s
-                                     sim.block(par=auxiliary_parameters[s,],cfg)})
+                                  sim.block(par=auxiliary_parameters[s,],cfg)})
 
 df<-do.call(rbind,df)
 
-df%>%group_by(trial)%>%summarise(rcard=mean(Rcard))%>%plot()    
-df%>%group_by(trial)%>%summarise(rteacher=mean(Rteacher))%>%plot()    
+df%>%group_by(trial)%>%summarise(Q1=mean(Qcard3))%>%plot()    
+df%>%group_by(trial)%>%summarise(reward=mean(reward))%>%plot()    
+df%>%group_by(trial)%>%summarise(follow=mean(student.follow))%>%plot()    
 
 # parameter recovery with stan --------------------------------------------
 
 #prepare action and reward matrices (subject x trial)
-a1=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'action']}))
-reward=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'reward']}))
+a1        =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student.ch']}))
+reward    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'reward']}))
+reveal    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'teacher.reveal']}))
+follow    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student.follow']}))
+offer1    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer1']}))
+offer2    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer2']}))
+teacher_ch=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'teacher.ch']}))
 
 #prepare data
 model_data <- list(Nsubj = Nsubj,
@@ -77,11 +78,16 @@ model_data <- list(Nsubj = Nsubj,
                    Narms = Nalt,
                    a1 = a1,
                    reward = reward,
-                   Nparam = Nparam
+                   reveal = reveal,
+                   follow = follow,
+                   offer1 = offer1,
+                   offer2 = offer2,
+                   teacher_ch=teacher_ch,
+                   Nparam = 7
                    )
         
 #fit stan model   
-rl_fit<- stan(file = "Hierarchical_cov_matrix_cholesky.stan", data=model_data, iter=2000,chains=6,cores =6) #iter - number of MCMC samples 
+rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=100,chains=1,cores =1) #iter - number of MCMC samples 
 
 print(rl_fit)
 rl_fit<-readRDS('fit.rds')

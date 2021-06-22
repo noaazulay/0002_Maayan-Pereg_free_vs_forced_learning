@@ -9,13 +9,13 @@ sim.block = function(par,cfg){
   rndwlk_teacher= cfg$rndwlk_teacher
   teacher.rate  = cfg$teacher.rate 
 
-  alpha.free             = inv.logit(par['alpha.free'])
-  alpha.inst.follow      = inv.logit(par['alpha.inst.follow'])
-  alpha.inst.oppose      = inv.logit(par['alpha.inst.oppose'])
+  alpha.card             = inv.logit(par['alpha.card'])
   alpha.teacher_as_bandit= inv.logit(par['alpha.teacher_as_bandit'])
   alpha.reliability      = inv.logit(par['alpha.reliability'])
   beta                   = exp(par['beta'])
   inst.bias              = par['inst.bias']
+  b1                     = par['b1']
+  b2                     = exp(par['b2'])
 
   Qcard         = rep(0, Nalt)
   Rcard         = 0
@@ -35,10 +35,11 @@ sim.block = function(par,cfg){
 
 
     #student integrated action values
+    p   =b1+b2*(Rcard*(1-Rteacher))
     Qnet=c(0,0)
-    Qnet                     = Rcard*Qcard[raffle]
-    Qnet[teacher.ch!=raffle] = Qnet[teacher.ch!=raffle]+Rteacher*Qteacher[1]
-    Qnet[teacher.ch==raffle] = Qnet[teacher.ch==raffle]+Rteacher*Qteacher[2]+(1-Rcard)*(1-Rteacher)*inst.bias
+    Qnet                     = p*Qcard[raffle]
+    Qnet[teacher.ch!=raffle] = Qnet[teacher.ch!=raffle]+(1-p)*Qteacher[1]
+    Qnet[teacher.ch==raffle] = Qnet[teacher.ch==raffle]+(1-p)*Qteacher[2]+(1-Rcard)*(1-Rteacher)*inst.bias
     
     #student choice
     student.ch    = sample(raffle, size=1, replace=TRUE,prob=exp(beta*Qnet)/sum(exp(beta*Qnet)))
@@ -79,11 +80,7 @@ sim.block = function(par,cfg){
     )
     
     #Card update student state-action values and reliability scores
-    alpha.student=alpha.inst.follow*(teacher.reveal*student.follow)     +
-                  alpha.inst.oppose*(teacher.reveal*(1-student.follow)) +
-                  alpha.free*       (1-teacher.reveal) 
-    
-    Qcard[student.ch]  = Qcard[student.ch]+alpha.student*PEcard
+    Qcard[student.ch]  = Qcard[student.ch]+alpha.card*PEcard
     Rcard              = Rcard+alpha.reliability*((1-abs(PEcard))-Rcard)
     
     
