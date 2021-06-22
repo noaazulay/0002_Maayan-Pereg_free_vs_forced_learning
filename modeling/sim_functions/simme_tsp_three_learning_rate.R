@@ -12,15 +12,10 @@ sim.block = function(par,cfg){
   alpha.free             = inv.logit(par['alpha.free'])
   alpha.inst.follow      = inv.logit(par['alpha.inst.follow'])
   alpha.inst.oppose      = inv.logit(par['alpha.inst.oppose'])
-  alpha.teacher_as_bandit= inv.logit(par['alpha.teacher_as_bandit'])
   beta                   = exp(par['beta'])
-  w.teacher1             = par['w.teacher1']
-  w.teacher2             = par['w.teacher2']
 
   Qcard         = rep(0, Nalt)
-  Rcard         = 0
   Qteacher      = c(0,0) #follow or oppose
-  Rteacher      = 1
   df            =data.frame()
   for (t in 1:Ntrl){
 
@@ -35,11 +30,9 @@ sim.block = function(par,cfg){
 
 
     #student integrated action values
-    Qnet=c(0,0)
-    Qnet                     = Qcard[raffle]
-    Qnet[teacher.ch!=raffle] = Qnet[teacher.ch!=raffle]+(0           +w.teacher2*Qteacher[1])
-    Qnet[teacher.ch==raffle] = Qnet[teacher.ch==raffle]+(w.teacher1 + w.teacher2*Qteacher[2])
-    
+    Qnet= c(0,0)
+    Qnet= Qcard[raffle]
+
     #student choice
     student.ch    = sample(raffle, size=1, replace=TRUE,prob=exp(beta*Qnet)/sum(exp(beta*Qnet)))
     student.follow=(student.ch==teacher.ch)*1  
@@ -64,6 +57,7 @@ sim.block = function(par,cfg){
       teacher.ch     =teacher.ch,
       teacher.reveal =teacher.reveal,
       student.ch     =student.ch,
+      student.a1     =((student.ch==raffle[2])*1+1),
       student.follow =student.follow,
       reward         =reward,
       PEcard         =PEcard,
@@ -71,9 +65,7 @@ sim.block = function(par,cfg){
       Qcard1         =Qcard[1],
       Qcard2         =Qcard[2],
       Qcard3         =Qcard[3],
-      Qcard4         =Qcard[4],
-      Qteacher.opp   =Qteacher[1],
-      Qteacher.follow=Qteacher[2])
+      Qcard4         =Qcard[4])
     )
     
     #Card update student state-action values and reliability scores
@@ -82,13 +74,7 @@ sim.block = function(par,cfg){
                   alpha.free*       (1-teacher.reveal) 
     
     Qcard[student.ch]  = Qcard[student.ch]+alpha.card*PEcard
-
-    
-    #teacher update student state-action values and reliability scores
-    alpha.teacher      = alpha.teacher_as_bandit*teacher.reveal
-    Qteacher[student.follow+1] = Qteacher[student.follow+1] +alpha.teacher*PEteacher
-
-  }
+}
   
   return (df)
 }

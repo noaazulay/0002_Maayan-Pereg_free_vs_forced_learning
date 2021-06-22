@@ -7,19 +7,19 @@ library("truncnorm")
 library(parallel)
 library(gtools) #inv.logit function 
 library(MASS)
-
+library(dplyr)
 
 
 # generate population and subject level parameters -----------------------------------------------------------
 
-Nsubj =5
+Nsubj =50
 
 #population location parameters
 mu=c(
 alpha.inst.follow       =logit(0.4),
 alpha.inst.oppose       =logit(0.3),
 alpha.free              =logit(0.5),
-beta                    =log(3),
+beta                    =log(3)
 )
 Nparam=length(mu)
 
@@ -64,13 +64,12 @@ df%>%group_by(trial)%>%summarise(follow=mean(student.follow))%>%plot()
 # parameter recovery with stan --------------------------------------------
 
 #prepare action and reward matrices (subject x trial)
-a1        =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student.ch']}))
+a1        =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student.a1']}))
 reward    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'reward']}))
 reveal    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'teacher.reveal']}))
 follow    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student.follow']}))
 offer1    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer1']}))
 offer2    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer2']}))
-teacher_ch=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'teacher.ch']}))
 
 #prepare data
 model_data <- list(Nsubj = Nsubj,
@@ -82,21 +81,23 @@ model_data <- list(Nsubj = Nsubj,
                    follow = follow,
                    offer1 = offer1,
                    offer2 = offer2,
-                   teacher_ch=teacher_ch,
-                   Nparam = 7
+                   Nparam = 4
                    )
         
 #fit stan model   
-rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=100,chains=1,cores =1) #iter - number of MCMC samples 
+rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=2000,chains=4,cores =4) #iter - number of MCMC samples 
 
 print(rl_fit)
-rl_fit<-readRDS('fit.rds')
+#rl_fit<-readRDS('fit.rds')
 
 
 # compare recovered parameters to true parameters  --------------------------------------------
 
         
 #population level (hyperparameter)
+summary(rl_fit , pars=c("mu"))$summary[,1]
+
+
 alpha_aux_mu_recovered   = (summary(rl_fit , pars=c("mu[1]"))$summary[,1])
 beta_aux_mu_recovered    = summary(rl_fit , pars=c("mu[2]"))$summary[,1]
 sigma_recovered          = matrix(summary(rl_fit , pars=c("sigma_matrix"))$summary[,1],2,2)
@@ -148,37 +149,9 @@ var(beta_recovered)
 
 
 
-##2nd version
-options(mc.cores = parallel::detectCores())
-rstan_options(auto_write=TRUE)
-
-my_model<- stan_model(file = "rl_basic.stan") 
-sample <- sampling(object = my_model, data = model_data)
-
-fit <-optimizing(object = my_model, data = model_data)
-#c(fit$par[1],fit$par[2])
-
-
-
-my_model<- stan_model(file = "rl_basic.stan") 
-sample <- sampling(object = my_model, data = model_data)
-
-plot(sample, plotfun = "hist", pars= "alpha")
-plot(sample, plotfun = "hist", pars= "beta")
-
 library("shinystan")
 launch_shinystan(rl_fit)
 
-#calculate cor between true and recovered params
-df.tbl   <-lapply(1:length(Nalt), function(alt) {
-  lapply(1:length(Ntrl), function(trl) {
-    data.frame(Nalt=Nalt[alt],
-               Ntrl=Ntrl[trl],
-               cor.alpha=cor(true.parms$alpha,inv.logit((do.call(rbind,alpha[[alt]][[trl]])))),
-               cor.beta=cor(true.parms$beta,exp((do.call(rbind,beta[[alt]][[trl]])))))
-  })})
-
-df.tbl<-do.call(rbind,lapply(1:length(Nalt), function(alt) {do.call(rbind,df.tbl[[alt]])}))
 
 #print table to file
 df.tbl %>%
