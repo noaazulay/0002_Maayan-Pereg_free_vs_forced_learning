@@ -2,10 +2,11 @@
 
 #sim_1 helper function
 sim.block = function(par,cfg){
+  Nblock        =cfg$Nblock
   Ntrl          = cfg$Ntrl
   Nalt          = cfg$Nalt
   Noffer        = cfg$Noffer           # how many cards from the deck are presented
-  rndwlk_frac   = cfg$rndwlk_frac     
+  rndwlk_card   = cfg$rndwlk_card     
   rndwlk_teacher= cfg$rndwlk_teacher
   teacher.rate  = cfg$teacher.rate 
 
@@ -13,14 +14,17 @@ sim.block = function(par,cfg){
   bias              = par['bias']
   beta              = exp(par['beta'])
 
+  df            =data.frame()
+  
+for (block in 1:Nblock) {
   Qcard         = rep(0, Nalt)
   Qteacher      = c(0,0)       #follow or oppose
-  df            =data.frame()
-  for (t in 1:Ntrl){
+
+    for (t in 1:Ntrl){
 
     #computer decides which cards to offer
     raffle      = sample(1:Nalt,Noffer,prob=rep(1/Nalt,Nalt))
-    cards.expval= rndwlk_frac[raffle,t]
+    cards.expval= rndwlk_card[raffle,t]
     teacher.beta= rndwlk_teacher[t]
  
     #teacher card and revel choices
@@ -38,7 +42,7 @@ sim.block = function(par,cfg){
     follow=(student_ch==teacher_ch)*1  
     
     #outcome
-    reward = sample(0:1, size=1, replace=TRUE,prob=c((1-rndwlk_frac[student_ch,t]),rndwlk_frac[student_ch,t]))
+    reward = sample(0:1, size=1, replace=TRUE,prob=c((1-rndwlk_card[student_ch,t]),rndwlk_card[student_ch,t]))
     
     #Prediction errors
     PEcard             = reward-Qcard[student_ch]
@@ -46,13 +50,14 @@ sim.block = function(par,cfg){
     #save data
     df<-rbind(df,data.frame(
       subject        =cfg$subject,
+      block          =block,
       trial          =t,
       offer1         =raffle[1],
       offer2         =raffle[2],
-      ev1            =rndwlk_frac[1,t],
-      ev2            =rndwlk_frac[2,t],
-      ev3            =rndwlk_frac[3,t],
-      ev4            =rndwlk_frac[4,t],
+      ev1            =rndwlk_card[1,t],
+      ev2            =rndwlk_card[2,t],
+      ev3            =rndwlk_card[3,t],
+      ev4            =rndwlk_card[4,t],
       teacher_ch     =teacher_ch,
       reveal         =reveal,
       student_ch     =student_ch,
@@ -71,6 +76,7 @@ sim.block = function(par,cfg){
     Qcard[student_ch]  = Qcard[student_ch]+alpha*PEcard
 }
   
+}
   return (df)
 }
 

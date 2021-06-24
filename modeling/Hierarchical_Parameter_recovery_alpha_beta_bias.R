@@ -12,7 +12,7 @@ library(dplyr)
 
 # generate population and subject level parameters -----------------------------------------------------------
 
-Nsubj =10
+Nsubj =50
 
 #population location parameters
 mu=c(
@@ -42,13 +42,23 @@ source('modeling/sim_functions/simme_tsp_alpha_beta_bias.R')
 #main configuration variables for the simulation
 Nalt  =4         #number of alternatives
 Noffer=2         #how many cards from the deck are presented
-Ntrl  =300       #number of trials
+Nblock=3         #number of blocks
+Ntrl  =130       #number of trials
 
-cfg=list(      Ntrl  =Ntrl,
+rndwlk_card=cbind(as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130trials.csv',header=F)),
+                  as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130trials.csv',header=F)),
+                  as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130trials.csv',header=F))) #duplicate for three blocks
+
+
+rndwlk_teacher=as.vector(as.matrix(read.csv('modeling/sim_functions/rndwalk_3teachers_130trials.csv',header=F))) #duplicate for three blocks
+                   
+                  
+cfg=list(      Nblock=Nblock,
+               Ntrl  =Ntrl,
                Nalt  =Nalt,
                Noffer=Noffer,
-               rndwlk_frac   =as.matrix(read.csv('modeling/sim_functions/rndwlk_4frc_1000trials.csv',header=F)),
-               rndwlk_teacher=rep(5,Ntrl),
+               rndwlk_card   =rndwlk_card,
+               rndwlk_teacher=rndwlk_teacher,
                teacher.rate=0.6)
 
 # simulating N agents 
@@ -88,10 +98,10 @@ model_data <- list(Nsubj = Nsubj,
         
 #fit stan model 
 start_time <- Sys.time()
-rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan", data=model_data, iter=2000,chains=1,cores =1) #iter - number of MCMC samples 
-
+rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan", data=model_data, iter=2000,chains=4,cores =4) #iter - number of MCMC samples 
 end_time <- Sys.time()
 
+# examine mcmc ----------------------------------------------------------------------------
 library("bayesplot")
 plot(rl_fit)
 posterior=as.array(rl_fit)
