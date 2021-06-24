@@ -84,8 +84,10 @@ model_data <- list(Nsubj = Nsubj,
                    Nparam = 4
                    )
         
-#fit stan model   
+#fit stan model 
+start_time <- Sys.time()
 rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=2000,chains=4,cores =4) #iter - number of MCMC samples 
+end_time <- Sys.time()
 
 print(rl_fit)
 #rl_fit<-readRDS('fit.rds')
