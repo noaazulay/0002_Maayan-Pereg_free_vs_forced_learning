@@ -4,18 +4,18 @@
 sim.block = function(par,cfg){
   Ntrl          = cfg$Ntrl
   Nalt          = cfg$Nalt
-  Noffer        = cfg$Noffer # how many cards from the deck are presented
-  rndwlk_frac   = cfg$rndwlk_frac
+  Noffer        = cfg$Noffer           # how many cards from the deck are presented
+  rndwlk_frac   = cfg$rndwlk_frac     
   rndwlk_teacher= cfg$rndwlk_teacher
   teacher.rate  = cfg$teacher.rate 
 
-  alpha.free             = inv.logit(par['alpha.free'])
-  alpha.inst.follow      = inv.logit(par['alpha.inst.follow'])
-  alpha.inst.oppose      = inv.logit(par['alpha.inst.oppose'])
-  beta                   = exp(par['beta'])
+  alpha_free        = inv.logit(par['alpha_free'])
+  alpha_follow      = inv.logit(par['alpha_follow'])
+  alpha_oppose      = inv.logit(par['alpha_oppose'])
+  beta              = exp(par['beta'])
 
   Qcard         = rep(0, Nalt)
-  Qteacher      = c(0,0) #follow or oppose
+  Qteacher      = c(0,0)       #follow or oppose
   df            =data.frame()
   for (t in 1:Ntrl){
 
@@ -25,8 +25,8 @@ sim.block = function(par,cfg){
     teacher.beta= rndwlk_teacher[t]
  
     #teacher card and revel choices
-    teacher.ch      = sample(raffle,1,prob=exp(teacher.beta*cards.expval) / sum(exp(teacher.beta*cards.expval)))
-    teacher.reveal  = sample(c(0,1),1,prob=c((1-teacher.rate),teacher.rate))
+    teacher_ch      = sample(raffle,1,prob=exp(teacher.beta*cards.expval) / sum(exp(teacher.beta*cards.expval)))
+    reveal          = sample(c(0,1),1,prob=c((1-teacher.rate),teacher.rate))
 
 
     #student integrated action values
@@ -34,16 +34,15 @@ sim.block = function(par,cfg){
     Qnet= Qcard[raffle]
 
     #student choice
-    student.ch    = sample(raffle, size=1, replace=TRUE,prob=exp(beta*Qnet)/sum(exp(beta*Qnet)))
-    student.follow=(student.ch==teacher.ch)*1  
+    student_ch    = sample(raffle, size=1, replace=TRUE,prob=exp(beta*Qnet)/sum(exp(beta*Qnet)))
+    follow=(student_ch==teacher_ch)*1  
     
     #outcome
-    reward = sample(0:1, size=1, replace=TRUE,prob=c((1-rndwlk_frac[student.ch,t]),rndwlk_frac[student.ch,t]))
+    reward = sample(0:1, size=1, replace=TRUE,prob=c((1-rndwlk_frac[student_ch,t]),rndwlk_frac[student_ch,t]))
     
-    #Prediction erros
-    PEcard             = reward-Qcard[student.ch]
-    PEteacher          = reward-Qteacher[student.follow+1]
-    
+    #Prediction errors
+    PEcard             = reward-Qcard[student_ch]
+
     #save data
     df<-rbind(df,data.frame(
       subject        =cfg$subject,
@@ -54,14 +53,13 @@ sim.block = function(par,cfg){
       ev2            =rndwlk_frac[2,t],
       ev3            =rndwlk_frac[3,t],
       ev4            =rndwlk_frac[4,t],
-      teacher.ch     =teacher.ch,
-      teacher.reveal =teacher.reveal,
-      student.ch     =student.ch,
-      student.a1     =((student.ch==raffle[2])*1+1),
-      student.follow =student.follow,
+      teacher_ch     =teacher_ch,
+      reveal         =reveal,
+      student_ch     =student_ch,
+      raffle_ch      =((student_ch==raffle[2])*1+1), #did the student take A or B from the two offers to be used in the softmax from Qnet
+      follow         =follow,
       reward         =reward,
       PEcard         =PEcard,
-      PEteacher      =PEteacher,
       Qcard1         =Qcard[1],
       Qcard2         =Qcard[2],
       Qcard3         =Qcard[3],
@@ -69,11 +67,11 @@ sim.block = function(par,cfg){
     )
     
     #Card update student state-action values and reliability scores
-    alpha.card=alpha.inst.follow*(teacher.reveal*student.follow)     +
-                  alpha.inst.oppose*(teacher.reveal*(1-student.follow)) +
-                  alpha.free*       (1-teacher.reveal) 
+    if (reveal==0)             {alpha=alpha_free}
+    if (reveal==1 & follow==1) {alpha=alpha_follow}
+    if (reveal==1 & follow==0) {alpha=alpha_oppose}
     
-    Qcard[student.ch]  = Qcard[student.ch]+alpha.card*PEcard
+    Qcard[student_ch]  = Qcard[student_ch]+alpha*PEcard
 }
   
   return (df)

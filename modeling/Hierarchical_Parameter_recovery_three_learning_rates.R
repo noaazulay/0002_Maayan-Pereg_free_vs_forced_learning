@@ -12,19 +12,19 @@ library(dplyr)
 
 # generate population and subject level parameters -----------------------------------------------------------
 
-Nsubj =50
+Nsubj =10
 
 #population location parameters
 mu=c(
-alpha.inst.follow       =logit(0.4),
-alpha.inst.oppose       =logit(0.3),
-alpha.free              =logit(0.5),
-beta                    =log(3)
+alpha_follow       =logit(0.4),
+alpha_oppose       =logit(0.3),
+alpha_free         =logit(0.5),
+beta               =log(3)
 )
 Nparam=length(mu)
 
 #population scale parameters
-tau          =c(.2,.2,.2,.05) #var vector
+tau          =c(.25,.25,.25,.05) #var vector
 cov_param    =0
 sigma        = diag(tau)
 sigma[!diag(nrow=Nparam)]=cov_param
@@ -32,7 +32,10 @@ sigma[!diag(nrow=Nparam)]=cov_param
 # sample aux parameters
 auxiliary_parameters = mvrnorm(n = Nsubj, mu = mu, Sigma = sigma)
 
-
+hist(inv.logit(auxiliary_parameters[,1]))
+hist(inv.logit(auxiliary_parameters[,2]))
+hist(inv.logit(auxiliary_parameters[,3]))
+hist(exp(auxiliary_parameters[,4]))
 
 # run a simulation study -----------------------------------------------------------
 
@@ -47,7 +50,7 @@ cfg=list(      Ntrl  =Ntrl,
                Nalt  =Nalt,
                Noffer=Noffer,
                rndwlk_frac   =as.matrix(read.csv('modeling/sim_functions/rndwlk_4frc_1000trials.csv',header=F)),
-               rndwlk_teacher=rep(100,Ntrl),
+               rndwlk_teacher=rep(5,Ntrl),
                teacher.rate=0.6)
 
 # simulating N agents 
@@ -58,35 +61,37 @@ df<-lapply(1:Nsubj,function(s)   {cfg$subject=s
 df<-do.call(rbind,df)
 
 df%>%group_by(trial)%>%summarise(Q1=mean(Qcard3))%>%plot()    
-df%>%group_by(trial)%>%summarise(reward=mean(reward))%>%plot()    
+df%>%group_by(subject)%>%summarise(reward=mean(reward))%>%plot()    
 df%>%group_by(trial)%>%summarise(follow=mean(student.follow))%>%plot()    
 
 # parameter recovery with stan --------------------------------------------
 
 #prepare action and reward matrices (subject x trial)
-a1        =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student.a1']}))
+student_ch=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student_ch']}))
 reward    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'reward']}))
-reveal    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'teacher.reveal']}))
-follow    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student.follow']}))
+reveal    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'reveal']}))
+follow    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'follow']}))
 offer1    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer1']}))
 offer2    =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer2']}))
+raffle_ch=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'raffle_ch']}))
 
 #prepare data
 model_data <- list(Nsubj = Nsubj,
                    Ntrials = Ntrl,
                    Narms = Nalt,
-                   a1 = a1,
+                   student_ch = student_ch,
                    reward = reward,
                    reveal = reveal,
                    follow = follow,
                    offer1 = offer1,
                    offer2 = offer2,
+                   raffle_ch=raffle_ch,
                    Nparam = 4
                    )
         
 #fit stan model 
 start_time <- Sys.time()
-rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=2000,chains=4,cores =4) #iter - number of MCMC samples 
+rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=100,chains=1,cores =1) #iter - number of MCMC samples 
 end_time <- Sys.time()
 
 print(rl_fit)
@@ -96,6 +101,23 @@ print(rl_fit)
 # compare recovered parameters to true parameters  --------------------------------------------
 
         
+#individual parameters
+plot(
+  alpha_free_recovered=summary(rl_fit , pars=c("alpha_follow"))$summary[,1], 
+  inv.logit(auxiliary_parameters[,1]))
+
+plot(
+  alpha_free_recovered=summary(rl_fit , pars=c("alpha_oppose"))$summary[,1], 
+  inv.logit(auxiliary_parameters[,2]))
+
+
+plot(
+alpha_free_recovered=summary(rl_fit , pars=c("alpha_free"))$summary[,1], 
+inv.logit(auxiliary_parameters[,3]))
+
+
+
+
 #population level (hyperparameter)
 summary(rl_fit , pars=c("mu"))$summary[,1]
 
