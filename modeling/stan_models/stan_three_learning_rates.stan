@@ -47,8 +47,8 @@ transformed parameters {
         //assiging subject parameters
         alpha_follow[subj]              = inv_logit(auxiliary_parameters[subj][1]);
         alpha_oppose[subj]              = inv_logit(auxiliary_parameters[subj][2]); 
-        alpha_free[subj]                = inv_logit(auxiliary_parameters[subj][1]); 
-        beta[subj]                      = exp(auxiliary_parameters[subj][2]);
+        alpha_free[subj]                = inv_logit(auxiliary_parameters[subj][3]); 
+        beta[subj]                      = exp(auxiliary_parameters[subj][4]);
        
         //pre-assignment for Qvalues
         for (a in 1:2)     Qnet[a]     = 0;

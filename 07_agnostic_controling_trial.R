@@ -91,7 +91,75 @@ ggplot(tab[tab$session=="session1",], aes(x = running_trial, y = ch)) +
     y = "Choice")+
   ylim(0,3)
 
+####### acc and IQ
 
+df<-
+  tab%>%
+  filter(reveal==1,trial>1)%>%
+  group_by(prolific_id,acc.teacher)%>%
+  summarise(accuracy=mean(acc.player),IQ=mean(iq))%>%
+  #spread(session)%>%
+  na.omit()%>%as.data.frame()
+
+df <- pivot_wider(df,names_from = acc.teacher, values_from = c(accuracy,IQ))
+
+r_inst_teacher_wrong=cor.test(df$accuracy_0,df$IQ_0)
+
+r_inst_teacher_correct=cor.test(df$accuracy_1,df$IQ_1)
+
+ggplot(df,aes(x=IQ,y=accuracy))+geom_point(color='navy')+geom_smooth(method='lm')
+
+
+##
+df<-
+  tab%>%
+  filter(reveal==0, trial>1)%>%
+  group_by(prolific_id)%>%
+  summarise(accuracy=mean(acc.player),IQ=mean(iq))%>%
+  #spread(session)%>%
+  na.omit()%>%as.data.frame()
+
+
+r_free=cor.test(df$IQ,df$accuracy)
+
+ggplot(df,aes(x=IQ,y=accuracy))+geom_point(color='navy')+geom_smooth(method='lm')
+
+
+#### now full model with all conds:
+tab<-
+  tab%>%
+  mutate(iq_scale=iq/16)
+
+data = tab%>%filter(trial>1)
+data %<>%
+  
+  mutate(condition= ifelse(reveal==0,"free",ifelse(acc.teacher==1,"inst_correct","inst_wrong"))
+         
+  )
+
+m <- glmer(acc.player ~ iq_scale*condition + (condition | prolific_id), 
+           data = data, 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+           nAGQ = 1)
+summary(m)
+Anova(m)
+
+ggpredict(m, c("iq_scale", "condition"),digits=0) %>% plot()
+
+library(interactions)
+
+sim_slopes(m, pred = iq_scale, modx = condition, johnson_neyman = TRUE)
+
+
+
+
+
+m2 <- glmer(obey ~ iq_scale + (1 | prolific_id), 
+           data = data%>%filter(reveal==1), 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+           nAGQ = 1)
+summary(m2)
+ggpredict(m2, c("iq_scale"),digits=0) %>% plot()
 
 
 #test-retest by trial effect

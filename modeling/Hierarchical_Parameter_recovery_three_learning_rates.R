@@ -12,7 +12,7 @@ library(dplyr)
 
 # generate population and subject level parameters -----------------------------------------------------------
 
-Nsubj =10
+Nsubj =50
 
 #population location parameters
 mu=c(
@@ -60,9 +60,7 @@ df<-lapply(1:Nsubj,function(s)   {cfg$subject=s
 
 df<-do.call(rbind,df)
 
-df%>%group_by(trial)%>%summarise(Q1=mean(Qcard3))%>%plot()    
 df%>%group_by(subject)%>%summarise(reward=mean(reward))%>%plot()    
-df%>%group_by(trial)%>%summarise(follow=mean(student.follow))%>%plot()    
 
 # parameter recovery with stan --------------------------------------------
 
@@ -91,7 +89,7 @@ model_data <- list(Nsubj = Nsubj,
         
 #fit stan model 
 start_time <- Sys.time()
-rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=100,chains=1,cores =1) #iter - number of MCMC samples 
+rl_fit<- stan(file = "modeling/stan_models/stan_three_learning_rates.stan", data=model_data, iter=2000,chains=4,cores =4) #iter - number of MCMC samples 
 end_time <- Sys.time()
 
 print(rl_fit)
