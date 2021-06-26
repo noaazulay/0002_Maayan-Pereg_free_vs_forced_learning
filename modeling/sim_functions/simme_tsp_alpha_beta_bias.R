@@ -2,8 +2,8 @@
 
 #sim_1 helper function
 sim.block = function(par,cfg){
-  Nblock        =cfg$Nblock
-  Ntrl          = cfg$Ntrl
+  Nblocks       = cfg$Nblocks
+  Ntrials       = cfg$Ntrials
   Nalt          = cfg$Nalt
   Noffer        = cfg$Noffer           # how many cards from the deck are presented
   rndwlk_card   = cfg$rndwlk_card     
@@ -16,11 +16,11 @@ sim.block = function(par,cfg){
 
   df            =data.frame()
   
-for (block in 1:Nblock) {
+for (block in 1:Nblocks) {
   Qcard         = rep(0, Nalt)
   Qteacher      = c(0,0)       #follow or oppose
 
-    for (t in 1:Ntrl){
+    for (t in 1:Ntrials){
 
     #computer decides which cards to offer
     raffle      = sample(1:Nalt,Noffer,prob=rep(1/Nalt,Nalt))

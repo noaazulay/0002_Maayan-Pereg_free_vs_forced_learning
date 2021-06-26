@@ -10,9 +10,10 @@ library(MASS)
 library(dplyr)
 
 
-# generate population and subject level parameters -----------------------------------------------------------
+# load data -----------------------------------------------------------
+load('modeling/data/tab.Rdata')
 
-Nsubj =5
+Nsubj =50
 
 #population location parameters
 mu=c(
@@ -40,22 +41,23 @@ hist(exp(auxiliary_parameters[,3]))
 source('modeling/sim_functions/simme_tsp_alpha_beta_bias.R')
 
 #main configuration variables for the simulation
-Nalt    =4         #number of alternatives
-Noffer  =2         #how many cards from the deck are presented
-Nblocks =3         #number of blocks
-Ntrials =130       #number of trials
+Nalt  =4         #number of alternatives
+Noffer=2         #how many cards from the deck are presented
+Nblock=3         #number of blocks
+Ntrl  =130       #number of trials
 
 rndwlk_card=cbind(as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130trials.csv',header=F)),
                   as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130trials.csv',header=F)),
                   as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130trials.csv',header=F))) #duplicate for three blocks
 
+
 rndwlk_teacher=as.vector(as.matrix(read.csv('modeling/sim_functions/rndwalk_3teachers_130trials.csv',header=F))) #duplicate for three blocks
                    
                   
-cfg=list(      Nblocks=Nblocks,
-               Ntrials=Ntrials,
-               Nalt   =Nalt,
-               Noffer =Noffer,
+cfg=list(      Nblock=Nblock,
+               Ntrl  =Ntrl,
+               Nalt  =Nalt,
+               Noffer=Noffer,
                rndwlk_card   =rndwlk_card,
                rndwlk_teacher=rndwlk_teacher,
                teacher.rate=0.6)
@@ -63,25 +65,10 @@ cfg=list(      Nblocks=Nblocks,
 # simulating N agents 
 df<-lapply(1:Nsubj,function(s)   {cfg$subject=s
                                   sim.block(par=auxiliary_parameters[s,],cfg)})
+
 df<-do.call(rbind,df)
+
 df%>%group_by(subject)%>%summarise(reward=mean(reward))%>%plot()    
-
-# add abort column to simulate missing trials due to missing values or trial omission ---------------------------------
-df$abort<-0
-for (subject in seq(1:Nsubj)){
-  p_abort               =runif(1,min=0,max=0.1)         #percent missing data for the individual
-  index_abort           =sample(which(df$subject==subject),p_abort*Ntrials*Nblocks)  #index of rows to abort
-  df$abort[index_abort]=1
-  
-}
-
-sum(is.na(df))*1 #what is the total number of NAN trails in the data frame
-
-#creating a list of the number of NAN trails of each subject
-Nnan_trails = list()
-for (subj in seq(1:Nsubj)){
-  Nnan_trails[subj]=(sum(is.na(df[subj,]))*1)
-}
 
 # parameter recovery with stan --------------------------------------------
 
