@@ -10,9 +10,12 @@ library(MASS)
 library(dplyr)
 
 
-# generate population and subject level parameters -----------------------------------------------------------
 
-Nsubj =5
+################################################################################################################
+# generate population and subject level parameters -----------------------------------------------------------
+################################################################################################################
+
+Nsubjects = 10
 
 #population location parameters
 mu=c(
@@ -29,13 +32,14 @@ sigma        = diag(tau)
 sigma[!diag(nrow=Nparam)]=cov_param
 
 # sample aux parameters
-auxiliary_parameters = mvrnorm(n = Nsubj, mu = mu, Sigma = sigma)
+auxiliary_parameters = mvrnorm(n = Nsubjects, mu = mu, Sigma = sigma)
 
-hist(inv.logit(auxiliary_parameters[,1]))
-hist(auxiliary_parameters[,2])
-hist(exp(auxiliary_parameters[,3]))
 
+
+
+################################################################################################################
 # run a simulation study -----------------------------------------------------------
+################################################################################################################
 
 source('modeling/sim_functions/simme_tsp_alpha_beta_bias.R')
 
@@ -60,63 +64,73 @@ cfg=list(      Nblocks=Nblocks,
                rndwlk_teacher=rndwlk_teacher,
                teacher.rate=0.6)
 
+
+
 # simulating N agents 
-df<-lapply(1:Nsubj,function(s)   {cfg$subject=s
+df<-lapply(1:Nsubjects,function(s)   {cfg$subject=s
                                   sim.block(par=auxiliary_parameters[s,],cfg)})
 df<-do.call(rbind,df)
 df%>%group_by(subject)%>%summarise(reward=mean(reward))%>%plot()    
 
-# add abort column to simulate missing trials due to missing values or trial omission ---------------------------------
+
+# add abort column to simulate missing trials due to missing values or trial omission
+max_precent_of_aborted_trials=0.1
 df$abort<-0
-for (subject in seq(1:Nsubj)){
-  p_abort               =runif(1,min=0,max=0.1)         #percent missing data for the individual
-  index_abort           =sample(which(df$subject==subject),p_abort*Ntrials*Nblocks)  #index of rows to abort
-  df$abort[index_abort]=1
+for (subject in seq(1:Nsubjects)){
+    
+    index_abort           =sample(which(df$subject==subject),runif(1,min=0,max=max_precent_of_aborted_trials)*Ntrials*Nblocks)  #index of rows to abort
   
+    df$abort[index_abort]=1
 }
 
-sum(is.na(df))*1 #what is the total number of NAN trails in the data frame
 
-#creating a list of the number of NAN trails of each subject
-Nnan_trails = list()
-for (subj in seq(1:Nsubj)){
-  Nnan_trails[subj]=(sum(is.na(df[subj,]))*1)
-}
 
+#count and omit aborted trials
+df%>%group_by(subject)%>%summarise(mean(abort))
+df<-df[df$abort==0,]
+df%>%group_by(subject)%>%summarise(mean(abort))
+
+
+
+
+################################################################################################################
 # parameter recovery with stan --------------------------------------------
+################################################################################################################
+source('modeling/stan_models/make_mystandata.R')
+data_for_stan<-make_mystandata(data, 
+                               subjects_list      =unique(df$subject),
+                               Ntrials_per_subject=as.numeric(df%>%group_by(subject)%>%summarise(trials=length(trial))%>%select(trials)%>%unlist()),
+                               var_toinclude      =c(
+                                 'student_ch',
+                                 'reward',
+                                 'reveal',
+                                 'follow',
+                                 'offer1',
+                                 'offer2',
+                                 'raffle_student_ch',
+                                 'raffle_teacher_ch'))
 
-#prepare action and reward matrices (subject x trial)
-student_ch       =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'student_ch']}))
-reward           =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'reward']}))
-reveal           =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'reveal']}))
-follow           =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'follow']}))
-offer1           =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer1']}))
-offer2           =t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'offer2']}))
-raffle_student_ch=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'raffle_student_ch']}))
-raffle_teacher_ch=t(sapply(1:Nsubj,function(subj) {df[df$subj==subj,'raffle_teacher_ch']}))
 
-#prepare data
-model_data <- list(Nsubj = Nsubj,
-                   Ntrials = Ntrl,
-                   Narms = Nalt,
-                   student_ch = student_ch,
-                   reward = reward,
-                   reveal = reveal,
-                   follow = follow,
-                   offer1 = offer1,
-                   offer2 = offer2,
-                   raffle_student_ch=raffle_student_ch,
-                   raffle_teacher_ch=raffle_teacher_ch,
-                   Nparam = 3
-                   )
-        
 #fit stan model 
 start_time <- Sys.time()
-rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan", data=model_data, iter=2000,chains=4,cores =4) #iter - number of MCMC samples 
+rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan", 
+              data=data_for_stan, 
+              iter=1000,
+              chains=2,
+              cores =1,
+              pars=c('alpha','bias','beta','mu'),
+              save_warmup(T)
+) 
 end_time <- Sys.time()
 
 # examine mcmc ----------------------------------------------------------------------------
 library("bayesplot")
+color_scheme_set("blue")
+mcmc_trace(rl_fit)
+
+mcmc_trace(rl_fit, pars = c("alpha[1]", "alpha[2]"), 
+           facet_args = list(ncol = 1, strip.position = "left"))
+
 plot(rl_fit)
 posterior=as.array(rl_fit)
 mcmc_trace(rl_fit, pars = c("bias"))
@@ -125,8 +139,10 @@ print(rl_fit)
 mcmc_trace(rl_fit, pars = c("auxiliary_parameters[1,1]"))
 mcmc_areas(posterior,pars='bias[1]')
 
-# compare recovered parameters to true parameters  --------------------------------------------
 
+################################################################################################################
+# compare recovered parameters to true parameters  --------------------------------------------
+################################################################################################################
         
 #individual parameters
 plot(
