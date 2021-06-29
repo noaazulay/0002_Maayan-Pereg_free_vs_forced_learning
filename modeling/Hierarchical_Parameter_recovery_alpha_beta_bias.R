@@ -115,30 +115,38 @@ data_for_stan<-make_mystandata(data,
 start_time <- Sys.time()
 rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan", 
               data=data_for_stan, 
-              iter=1000,
+              iter=1000,                          #number of warmup=0.5*iter
               chains=2,
-              cores =1,
-              pars=c('alpha','bias','beta','mu'),
-              save_warmup(T)
-) 
+              cores =1, 
+              #pars=c('alpha','bias','beta','mu'), #define which parameters to save so that the final file won't be larger then necessary
+              save_warmup=T)
+
 end_time <- Sys.time()
 
 # examine mcmc ----------------------------------------------------------------------------
 library("bayesplot")
-color_scheme_set("blue")
-mcmc_trace(rl_fit)
+library(ggplot2)
+#plot posteriors
+plot_title <- ggtitle("Posterior distributions",
+                      "with medians and 80% intervals")
+mcmc_areas(rl_fit,
+           pars = c("sigma_matrix[3,2]"),
+           prob = 0.8) + plot_title
 
-mcmc_trace(rl_fit, pars = c("alpha[1]", "alpha[2]"), 
+#plot mcmc chains
+color_scheme_set("blue")
+mcmc_trace(rl_fit, pars = c("mu[1]", "mu[2]","mu[3]"), n_warmup=500,
            facet_args = list(ncol = 1, strip.position = "left"))
 
-plot(rl_fit)
+
+traceplot(rl_fit, c("mu[1]", "mu[2]","mu[3]"), inc_warmup = TRUE, nrow = 3)
+
 posterior=as.array(rl_fit)
 mcmc_trace(rl_fit, pars = c("bias"))
 print(rl_fit)
 #rl_fit<-readRDS('fit.rds')
 mcmc_trace(rl_fit, pars = c("auxiliary_parameters[1,1]"))
 mcmc_areas(posterior,pars='bias[1]')
-
 
 ################################################################################################################
 # compare recovered parameters to true parameters  --------------------------------------------
