@@ -45,20 +45,15 @@ parameters {
 }
 
 transformed parameters {
-
-      //Scale matrix for individual level parameters
-      //specifically we are intrested in getting a sigma matrix we is the covariance matrix that is used to sample
-      //the model parameters from a multivariate normal in the "model" block for stan
-      //here, we take tau (variance vector) and L_Omega (Lower triangle of correlation matrix)
-      //and convert them to the sigma_matrix (covariance matrix)
+//declare variables and parameters
+      //population level
       matrix[Nparameters,Nparameters] sigma_matrix;
-      sigma_matrix = diag_pre_multiply(tau, (L_Omega*L_Omega')); //L_Omega*L_omega' give us Omega (the corr matrix). 
-      sigma_matrix = diag_post_multiply(sigma_matrix, tau);     // diag(tau)*omega*diag(tau) gives us sigma_matirx (the cov matrix)
-
-      //individuals parameters
+      
+      //individuals level
       real alpha[Nsubjects];
       real bias[Nsubjects];
       real beta[Nsubjects];
+
 
       //additional variabels
       matrix [Nsubjects,Ntrials] log_lik;
@@ -66,11 +61,24 @@ transformed parameters {
       vector<lower=0, upper=1>[Narms] Qcard;
       real PE;
       
+//preassignment
+
+      //Scale matrix for individual level parameters
+      //specifically we are intrested in getting a sigma matrix we is the covariance matrix that is used to sample
+      //the model parameters from a multivariate normal in the "model" block for stan
+      //here, we take tau (variance vector) and L_Omega (Lower triangle of correlation matrix)
+      //and convert them to the sigma_matrix (covariance matrix)
+      sigma_matrix = diag_pre_multiply(tau, (L_Omega*L_Omega')); //L_Omega*L_omega' give us Omega (the corr matrix). 
+      sigma_matrix = diag_post_multiply(sigma_matrix, tau);     // diag(tau)*omega*diag(tau) gives us sigma_matirx (the cov matrix)
+
+
+      
       log_lik=rep_matrix(0,Nsubjects,Ntrials);
       
       
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//loglike estimation
   for (subject in 1:Nsubjects){
         //assiging subject level model parameters
         //use inv_logit for parameters that should be between 0 and 1

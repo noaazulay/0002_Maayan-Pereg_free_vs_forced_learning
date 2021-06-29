@@ -15,14 +15,14 @@ library(dplyr)
 # generate population and subject level parameters -----------------------------------------------------------
 ################################################################################################################
 
-Nsubjects = 10
+Nsubjects = 100
 
 #population location parameters
 mu=c(
-alpha              =logit(0.4),
-bias               =0,
-beta               =log(3),
-iq_slope           =0.5
+  alpha              =logit(0.4),
+  bias               =0,
+  beta               =log(3),
+  iq_slope           =0.5
 )
 Nparam=length(mu)
 
@@ -55,8 +55,8 @@ rndwlk_card=cbind(as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130t
                   as.matrix(read.csv('modeling/sim_functions/rndwalk_4cards_130trials.csv',header=F))) #duplicate for three blocks
 
 rndwlk_teacher=as.vector(as.matrix(read.csv('modeling/sim_functions/rndwalk_3teachers_130trials.csv',header=F))) #duplicate for three blocks
-                   
-                  
+
+
 cfg=list(      Nblocks=Nblocks,
                Ntrials=Ntrials,
                Nalt   =Nalt,
@@ -70,7 +70,7 @@ iq=rnorm(Nsubjects)
 
 # simulating N agents 
 df<-lapply(1:Nsubjects,function(s)   {cfg$subject=s
-                                  sim.block(par=auxiliary_parameters[s,],cfg,iq[s])})
+sim.block(par=auxiliary_parameters[s,],cfg,iq[s])})
 df<-do.call(rbind,df)
 df%>%group_by(subject)%>%summarise(reward=mean(reward))%>%plot()    
 
@@ -79,10 +79,10 @@ df%>%group_by(subject)%>%summarise(reward=mean(reward))%>%plot()
 max_precent_of_aborted_trials=0.1
 df$abort<-0
 for (subject in seq(1:Nsubjects)){
-    
-    index_abort           =sample(which(df$subject==subject),runif(1,min=0,max=max_precent_of_aborted_trials)*Ntrials*Nblocks)  #index of rows to abort
   
-    df$abort[index_abort]=1
+  index_abort           =sample(which(df$subject==subject),runif(1,min=0,max=max_precent_of_aborted_trials)*Ntrials*Nblocks)  #index of rows to abort
+  
+  df$abort[index_abort]=1
 }
 
 
@@ -118,17 +118,25 @@ data_for_stan=append(data_for_stan,list(iq=iq))
 start_time <- Sys.time()
 rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias_withIQcorr.stan", 
               data=data_for_stan, 
-              iter=1000,                          #number of warmup=0.5*iter
-              chains=1,
-              cores =1, 
-              #pars=c('alpha','bias','beta','mu'), #define which parameters to save so that the final file won't be larger then necessary
+              iter=2000,                          #number of warmup=0.5*iter
+              chains=4,
+              cores =4, 
+              pars=c('alpha','bias','beta','mu[4]'), #define which parameters to save so that the final file won't be larger then necessary
               save_warmup=F)
 
 end_time <- Sys.time()
 
+#save results
+saveRDS(rl_fit,file='modeling/results/Parameter_recovery_alpha_beta_bias_iqcorr.rds')
+trueparams=list(Nsubjects,mu,tau,cov_param,sigma,auxiliary_parameters)
+
+save(trueparams,file='modeling/results/Parameter_recovery_alpha_beta_bias_iqcorr_trueparams.Rdata')
+
+
 # examine mcmc ----------------------------------------------------------------------------
 library("bayesplot")
 library(ggplot2)
+#rl_fit<-readRDS('modeling/results/Parameter_recovery_alpha_beta_bias_iqcorr.rds')
 #plot posteriors
 plot_title <- ggtitle("Posterior distributions",
                       "with medians and 80% intervals")
@@ -137,29 +145,20 @@ mcmc_areas(rl_fit,
            prob = 0.8) + plot_title
 
 
-mcmc_areas(rl_fit,
-           pars = c("iq_slope_corr"),
-           prob = 0.8) + plot_title
 
 #plot mcmc chains
 color_scheme_set("blue")
-mcmc_trace(rl_fit, pars = c("mu[1]", "mu[2]","mu[3]"), n_warmup=500,
+mcmc_trace(rl_fit, pars = c("mu[1]", "mu[2]","mu[3]","mu[4]"), n_warmup=0,
            facet_args = list(ncol = 1, strip.position = "left"))
 
 
 traceplot(rl_fit, c("mu[1]", "mu[2]","mu[3]"), inc_warmup = TRUE, nrow = 3)
 
-posterior=as.array(rl_fit)
-mcmc_trace(rl_fit, pars = c("bias"))
-print(rl_fit)
-#rl_fit<-readRDS('fit.rds')
-mcmc_trace(rl_fit, pars = c("auxiliary_parameters[1,1]"))
-mcmc_areas(posterior,pars='bias[1]')
 
 ################################################################################################################
 # compare recovered parameters to true parameters  --------------------------------------------
 ################################################################################################################
-        
+
 #individual parameters
 plot(
   summary(rl_fit , pars=c("alpha"))$summary[,1], 
@@ -171,8 +170,8 @@ plot(
 
 
 plot(
-summary(rl_fit , pars=c("beta"))$summary[,1], 
-exp(auxiliary_parameters[,3]))
+  summary(rl_fit , pars=c("beta"))$summary[,1], 
+  exp(auxiliary_parameters[,3]))
 
 
 
