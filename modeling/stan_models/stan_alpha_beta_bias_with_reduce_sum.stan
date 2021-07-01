@@ -1,3 +1,8 @@
+functions {
+
+}
+
+
 data {
   
   //General fixed parameters for the experiment/models
