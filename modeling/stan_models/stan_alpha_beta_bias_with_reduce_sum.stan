@@ -42,6 +42,7 @@ parameters {
   vector[Nparameters] auxiliary_parameters[Nsubjects]; 
 
 
+
 }
 
 transformed parameters {
