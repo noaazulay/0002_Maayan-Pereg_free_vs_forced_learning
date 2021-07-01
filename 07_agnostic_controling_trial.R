@@ -27,7 +27,7 @@ tab<-
 
 tab<-
   tab%>%
-  mutate(trial_scale=trial/130, block_scale=block/3)
+  mutate(trial_scale=trial/130, block_scale=block/3,prob.diff=abs(prob.ch-prob.unch))
 
 
 m <- glmer(acc.player ~ trial_scale*block_scale + (trial_scale*block_scale| prolific_id), data = tab, family = binomial(link = "logit"),nAGQ=0)
@@ -137,20 +137,56 @@ data %<>%
          
   )
 
-m <- glmer(acc.player ~ iq_scale*condition + (condition | prolific_id), 
+m <- glmer(acc.player ~ iq_scale*condition*trial_scale + (condition | prolific_id), 
            data = data, 
            family = binomial, control = glmerControl(optimizer = "bobyqa"),
            nAGQ = 1)
 summary(m)
 Anova(m)
 
-ggpredict(m, c("iq_scale", "condition"),digits=0) %>% plot()
+ggpredict(m, c("iq_scale","condition","trial_scale"),digits=0) %>% plot()
 
-library(interactions)
+m2 <- glmer(acc.player ~ iq_scale*condition*prob.diff + (condition | prolific_id), 
+           data = data, 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+           nAGQ = 1)
+summary(m2)
+Anova(m2)
 
-sim_slopes(m, pred = iq_scale, modx = condition, johnson_neyman = TRUE)
+ggpredict(m2, c("iq_scale","condition","prob.diff"),digits=0) %>% plot()
+ggpredict(m2, c("iq_scale","prob.diff"),digits=0) %>% plot()
 
+m3 <- glmer(obey ~ iq_scale*condition*prob.diff + (1 | prolific_id), 
+            data = data%>%filter(reveal==1), 
+            family = binomial, control = glmerControl(optimizer = "bobyqa"),
+            nAGQ = 1)
+summary(m3)
+Anova(m3)
 
+ggpredict(m3, c("prob.diff","condition","iq_scale"),digits=0) %>% plot()
+ggpredict(m3, c("iq_scale","prob.diff"),digits=0) %>% plot()
+
+m <- glmer(obey ~ iq_scale*trial_scale + (condition | prolific_id), 
+           data = data%>%filter(reveal==1), 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+           nAGQ = 1)
+summary(m)
+Anova(m)
+
+ggpredict(m, c("trial_scale","iq_scale"),digits=0) %>% plot()
+
+# now ADHD
+
+data<-merge(data,adhd,by='prolific_id')
+
+m3 <- glmer(acc.player ~ adhd_factor*condition + (condition | prolific_id), 
+           data = data, 
+           family = binomial, control = glmerControl(optimizer = "bobyqa"),
+           nAGQ = 1)
+summary(m3)
+Anova(m3)
+
+ggpredict(m3, c("adhd_factor", "condition"),digits=0) %>% plot()
 
 
 
