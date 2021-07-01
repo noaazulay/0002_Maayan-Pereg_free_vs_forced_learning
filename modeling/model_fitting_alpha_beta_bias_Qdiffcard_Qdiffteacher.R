@@ -88,7 +88,7 @@ library(ggplot2)
 plot_title <- ggtitle("Posterior distributions",
                       "with medians and 80% intervals")
 mcmc_areas(rl_fit,
-           pars = c("mu[5]"),
+           pars = c("mu[4]"),
            prob = 0.8) + plot_title
 
 
@@ -100,42 +100,3 @@ mcmc_trace(rl_fit, pars = c("mu[1]", "mu[2]","mu[3]","mu[4]"), n_warmup=0,
 
 
 traceplot(rl_fit, c("mu[1]", "mu[2]","mu[3]"), inc_warmup = TRUE, nrow = 3)
-
-
-################################################################################################################
-# compare recovered parameters to true parameters  --------------------------------------------
-################################################################################################################
-
-#individual parameters
-plot(
-  summary(rl_fit , pars=c("alpha"))$summary[,1], 
-  inv.logit(auxiliary_parameters[,1]))
-
-
-plot(
-  summary(rl_fit , pars=c("beta"))$summary[,1], 
-  exp(auxiliary_parameters[,2]))
-
-
-plot(
-  summary(rl_fit , pars=c("bias_intercept"))$summary[,1], 
-  (auxiliary_parameters[,3]))
-
-
-plot(
-  summary(rl_fit , pars=c("bias_slope1"))$summary[,1], 
-  (auxiliary_parameters[,4]))
-
-plot(
-  summary(rl_fit , pars=c("bias_slope2"))$summary[,1], 
-  (auxiliary_parameters[,5]))
-
-
-
-
-
-
-
-
-
-
