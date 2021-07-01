@@ -111,7 +111,7 @@ data_for_stan<-make_mystandata(data,
                                  'raffle_student_ch',
                                  'raffle_teacher_ch'))
 
-
+data_for_stan<-df
 #fit stan model 
 start_time <- Sys.time()
 rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff_Qteacherdiff.stan", 

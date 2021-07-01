@@ -21,6 +21,7 @@ tab$frcB=tab$frcB+1
 
 tab$raffle_student_ch=(tab$ch==tab$frcB)*1+1
 tab$raffle_teacher_ch=(tab$teacher_choice==tab$frcB)*1+1
+tab=tab[1:10000,]
 head(tab[,c(
   'ch',
   'rw',
@@ -64,9 +65,9 @@ data_for_stan<-make_mystandata(tab,
 start_time <- Sys.time()
 rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff_Qteacherdiff.stan", 
               data=data_for_stan, 
-              iter=2000,                          #number of warmup=0.5*iter
-              chains=2,
-              cores =2, 
+              iter=100,                          #number of warmup=0.5*iter
+              chains=1,
+              cores =1, 
               pars=c('alpha','bias','beta','bias_intercept','bias_slope1','bias_slope2','mu'), #define which parameters to save so that the final file won't be larger then necessary
               save_warmup=F)
 
