@@ -1,3 +1,8 @@
+functions {
+
+}
+
+
 data {
   
   //General fixed parameters for the experiment/models
@@ -40,6 +45,7 @@ parameters {
   
   //subject level parameters
   vector[Nparameters] auxiliary_parameters[Nsubjects]; 
+
 
 
 }
