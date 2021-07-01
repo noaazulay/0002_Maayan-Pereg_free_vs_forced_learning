@@ -102,7 +102,7 @@ transformed parameters {
             Qnet[1]= Qcard[offer1[subject,trial]];
             Qnet[2]= Qcard[offer2[subject,trial]];
             
-            bias[subject]=bias_intercept[subject]+bias_slope1[subject]*(fabs(Qnet[1]-Qnet[2]))'
+            bias[subject]=bias_intercept[subject]+bias_slope1[subject]*(fabs(Qnet[1]-Qnet[2]));
             
             Qnet[raffle_teacher_ch[subject,trial]]=Qnet[raffle_teacher_ch[subject,trial]]+bias[subject];
 
