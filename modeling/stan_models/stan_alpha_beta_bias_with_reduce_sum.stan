@@ -1,4 +1,10 @@
 functions {
+    real[] mylogLike ({
+
+
+
+
+    }
 
 }
 
@@ -72,8 +78,8 @@ transformed parameters {
       vector<lower=0, upper=1>[Narms] Qcard;
       real PE;
       
-      log_lik=rep_matrix(0,Nsubjects,Ntrials);
-      
+      log_lik=rep_matrix(0,Nsubjects);
+      log_lik=myloglike()
       
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,8 +128,9 @@ model {
 
   // indvidual level priors (subject parameters)
   auxiliary_parameters ~ multi_normal(mu, sigma_matrix);
-
-  target += sum(log_lik);
-
+  
+for (subject in 1:Nsubjects){
+  target += sum(log_lik[subject]);
+}
 }
 

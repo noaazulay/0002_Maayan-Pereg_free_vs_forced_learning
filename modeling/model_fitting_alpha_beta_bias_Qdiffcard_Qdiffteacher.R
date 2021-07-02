@@ -21,7 +21,8 @@ tab$frcB=tab$frcB+1
 
 tab$raffle_student_ch=(tab$ch==tab$frcB)*1+1
 tab$raffle_teacher_ch=(tab$teacher_choice==tab$frcB)*1+1
-tab=tab[1:10000,]
+names(tab)
+tab=tab[tab$session=='session1',]
 head(tab[,c(
   'ch',
   'rw',
@@ -63,11 +64,11 @@ data_for_stan<-make_mystandata(tab,
 
 #fit stan model 
 start_time <- Sys.time()
-rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan", 
+rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan", 
               data=data_for_stan, 
-              iter=100,                          #number of warmup=0.5*iter
-              chains=1,
-              cores =1, 
+              iter=2000,                          #number of warmup=0.5*iter
+              chains=2,
+              cores =2, 
               pars=c('mu'), #define which parameters to save so that the final file won't be larger then necessary
               save_warmup=F)
 
@@ -88,7 +89,7 @@ library(ggplot2)
 plot_title <- ggtitle("Posterior distributions",
                       "with medians and 80% intervals")
 mcmc_areas(rl_fit,
-           pars = c("mu[4]"),
+           pars = c("mu[3]"),
            prob = 0.8) + plot_title
 
 
