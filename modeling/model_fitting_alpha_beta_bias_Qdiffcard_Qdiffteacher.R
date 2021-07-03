@@ -65,7 +65,11 @@ data_for_stan<-make_mystandata(tab,
 
 #fit stan model 
 start_time <- Sys.time()
-rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan", 
+my_models = c("modeling/stan_models/stan_alpha_beta_bias.stan",
+              "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan",
+              "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff_Qteacherdiff.stan")
+
+rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan", 
               data=data_for_stan, 
               iter=2000,                          #number of warmup=0.5*iter
               chains=4,
@@ -76,7 +80,7 @@ rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias.stan",
 end_time <- Sys.time()
 
 #save results
-saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias.rds')
+saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias_Qcarddiff.rds')
 
 
 # examine mcmc ----------------------------------------------------------------------------
@@ -87,7 +91,7 @@ library(ggplot2)
 plot_title <- ggtitle("Posterior distributions",
                       "with medians and 95% intervals")
 mcmc_areas(rl_fit,
-           pars = c("mu[2]"),
+           pars = c("mu[4]"),
            prob = 0.95) + plot_title
 inv.logit(-2)
 
@@ -98,7 +102,8 @@ mcmc_trace(rl_fit, pars = c("mu[1]", "mu[2]","mu[3]"), n_warmup=0,
            facet_args = list(ncol = 1, strip.position = "left"))
 
 
-traceplot(rl_fit, c("mu[1]", "mu[2]","mu[3]"), inc_warmup = TRUE, nrow = 3)
+traceplot(rl_fit, c("mu[1]", "mu[2]","mu[3]","mu[4]"), inc_warmup = TRUE, nrow = 3)
 
-
+hist(summary(rl_fit , pars=c("alpha"))$summary[,1])
+hist(summary(rl_fit , pars=c("beta"))$summary[,1])
 hist(summary(rl_fit , pars=c("bias"))$summary[,1])
