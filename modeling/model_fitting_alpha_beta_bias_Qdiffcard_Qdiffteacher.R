@@ -69,7 +69,7 @@ my_models = c("modeling/stan_models/stan_alpha_beta_bias.stan",
               "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan",
               "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff_Qteacherdiff.stan")
 
-rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan", 
+rl_fit<- stan(file = my_models[1], 
               data=data_for_stan, 
               iter=2000,                          #number of warmup=0.5*iter
               chains=4,
@@ -80,7 +80,7 @@ rl_fit<- stan(file = "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan",
 end_time <- Sys.time()
 
 #save results
-saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias_Qcarddiff.rds')
+saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias.rds')
 
 
 # examine mcmc ----------------------------------------------------------------------------
@@ -91,7 +91,7 @@ library(ggplot2)
 plot_title <- ggtitle("Posterior distributions",
                       "with medians and 95% intervals")
 mcmc_areas(rl_fit,
-           pars = c("mu[4]"),
+           pars = c("mu[1]"),
            prob = 0.95) + plot_title
 inv.logit(-2)
 
