@@ -69,7 +69,7 @@ my_models = c("modeling/stan_models/stan_alpha_beta_bias.stan",
               "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan",
               "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff_Qteacherdiff.stan")
 
-rl_fit<- stan(file = my_models[1], 
+rl_fit<- stan(file = my_models[3], 
               data=data_for_stan, 
               iter=2000,                          #number of warmup=0.5*iter
               chains=4,
@@ -80,7 +80,7 @@ rl_fit<- stan(file = my_models[1],
 end_time <- Sys.time()
 
 #save results
-saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias.rds')
+#saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias_Qdiffcard_Qdiffteacher.rds')
 
 
 # examine mcmc ----------------------------------------------------------------------------
@@ -91,7 +91,7 @@ library(ggplot2)
 plot_title <- ggtitle("Posterior distributions",
                       "with medians and 95% intervals")
 mcmc_areas(rl_fit,
-           pars = c("mu[1]"),
+           pars = c("mu[2]"),
            prob = 0.95) + plot_title
 inv.logit(-2)
 
@@ -104,6 +104,25 @@ mcmc_trace(rl_fit, pars = c("mu[1]", "mu[2]","mu[3]"), n_warmup=0,
 
 traceplot(rl_fit, c("mu[1]", "mu[2]","mu[3]","mu[4]"), inc_warmup = TRUE, nrow = 3)
 
-hist(summary(rl_fit , pars=c("alpha"))$summary[,1])
-hist(summary(rl_fit , pars=c("beta"))$summary[,1])
-hist(summary(rl_fit , pars=c("bias"))$summary[,1])
+hist(summary(rl_fit , pars=c("alpha_card"))$summary[,1])
+hist(summary(rl_fit , pars=c("alpha_teacher"))$summary[,1])
+
+hist(summary(rl_fit , pars=c("bias_intercept"))$summary[,1])
+hist(summary(rl_fit , pars=c("bias_slope1"))$summary[,1])
+hist(summary(rl_fit , pars=c("bias_slope2"))$summary[,1])
+
+alpha_card=summary(rl_fit , pars=c("alpha_card"))$summary[,1]
+alpha_teacher=summary(rl_fit , pars=c("alpha_teacher"))$summary[,1]
+beta=summary(rl_fit , pars=c("beta"))$summary[,1]
+beta_intercept=summary(rl_fit , pars=c("bias_intercept"))$summary[,1]
+beta_slope1=summary(rl_fit , pars=c("bias_slope1"))$summary[,1]
+beta_slope2=summary(rl_fit , pars=c("bias_slope2"))$summary[,1]
+
+load(paste('modeling/data/IQ_ADHD.Rdata',sep=""))
+head(IQ_ADHD)
+iq=IQ_ADHD$iq
+subj=unique(tab$prolific_id)
+m<-data.frame(prolific_id=subj,alpha_card,alpha_teacher,beta,beta_intercept,beta_slope1,beta_slope2)
+m2<-merge(IQ_ADHD,m,by=c('prolific_id'))
+plot(m2$iq,as.numeric(m2$beta_slope1))
+cor.test(m2$iq,as.numeric(m2$beta_slope1))

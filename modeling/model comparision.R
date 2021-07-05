@@ -23,6 +23,14 @@ loo_2<-loo(model_alpha_beta_bias_Qcarddiff,
           moment_match = FALSE,
           k_threshold = 0.7)
 
+
+loo_3<-loo(model_alpha_beta_bias_Qcarddiff,
+          pars = "log_lik",
+          save_psis = FALSE,
+          cores = 4,
+          moment_match = FALSE,
+          k_threshold = 0.7)
+
 comp<-loo_compare(loo_1, loo_2)
 
 

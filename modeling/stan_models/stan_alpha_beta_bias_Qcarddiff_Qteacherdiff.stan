@@ -26,7 +26,7 @@ transformed data{
     int<lower = 2> Narms;       //number of overall alternatives
     int<lower = 2> Nraffle;     //number of alternatives offered each trial
     
-    Nparameters=5;
+    Nparameters=6;
     Narms = 4;
     Nraffle=2;
 }
@@ -51,7 +51,8 @@ transformed parameters {
       matrix[Nparameters,Nparameters] sigma_matrix;
       
       //individuals parameters
-      real alpha[Nsubjects];
+      real alpha_card[Nsubjects];
+      real alpha_teacher[Nsubjects];
       real beta[Nsubjects];
       real bias[Nsubjects];
       real bias_intercept[Nsubjects];
@@ -86,11 +87,13 @@ transformed parameters {
         //use inv_logit for parameters that should be between 0 and 1
         //use exp for parameters that should be positive
         //leave without transformation for the reast of model parameters
-        alpha[subject]              = inv_logit(auxiliary_parameters[subject][1]);
-        beta[subject]               = exp(auxiliary_parameters[subject][2]);
-        bias_intercept[subject]     = auxiliary_parameters[subject][3];
-        bias_slope1[subject]        = auxiliary_parameters[subject][4]; 
-        bias_slope2[subject]        = auxiliary_parameters[subject][5]; 
+        alpha_card[subject]              = inv_logit(auxiliary_parameters[subject][1]);
+        alpha_teacher[subject]           = inv_logit(auxiliary_parameters[subject][2]);
+
+        beta[subject]               = exp(auxiliary_parameters[subject][3]);
+        bias_intercept[subject]     = auxiliary_parameters[subject][4];
+        bias_slope1[subject]        = auxiliary_parameters[subject][5]; 
+        bias_slope2[subject]        = auxiliary_parameters[subject][6]; 
 
         
         //pre-assignment of Qvalues
@@ -117,8 +120,8 @@ transformed parameters {
             //Qvalues update
             PEcard   = reward[subject,trial] - Qcard[student_ch[subject,trial]];
             PEteacher= reward[subject,trial] - Qteacher[follow[subject,trial]+1];
-            Qcard[student_ch[subject,trial]] += alpha[subject] * PEcard;
-            Qteacher[follow[subject,trial]+1]+= alpha[subject] * PEteacher;
+            Qcard[student_ch[subject,trial]] += alpha_card[subject] * PEcard;
+            Qteacher[follow[subject,trial]+1]+= alpha_teacher[subject] * PEteacher;
       } 
   }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
