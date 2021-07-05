@@ -3,9 +3,9 @@ rm(list=ls())
 
 my_models = c("modeling/results/model_fit_alpha_beta_bias.rds",
               "modeling/results/model_fit_alpha_beta_bias_Qcarddiff.rds",
-              "modeling/results/model_fit_alpha_beta_bias_Qcarddiff_Qteacherdiff.rds")
+              "modeling/results/model_fit_alpha_beta_bias_Qdiffcard_Qdiffteacher.rds")
 
-rl_fit<-readRDS(my_models[2])
+rl_fit<-readRDS(my_models[3])
 
 # examine mcmc ----------------------------------------------------------------------------
 library("bayesplot")
@@ -49,13 +49,16 @@ indv_params<-data.frame(prolific_id=subjects_list,alpha,beta,bias_intercept,bias
 save(indv_params,file='modeling/results/indv_params_alpha_beta_bias_Qdiffcard.Rdata')
 
 #alpha_beta_bias_Qdiff
-alpha=summary(rl_fit , pars=c("alpha"))$summary[,1]
+alpha_card=summary(rl_fit , pars=c("alpha_card"))$summary[,1]
+alpha_teacher=summary(rl_fit , pars=c("alpha_teacher"))$summary[,1]
 beta=summary(rl_fit , pars=c("beta"))$summary[,1]
 bias_intercept=summary(rl_fit , pars=c("bias_intercept"))$summary[,1]
 bias_slope1=summary(rl_fit , pars=c("bias_slope1"))$summary[,1]
 bias_slope2=summary(rl_fit , pars=c("bias_slope2"))$summary[,1]
 
-indv_params<-data.frame(prolific_id=subjects_list,alpha_card,alpha_teacher,beta,beta_intercept,beta_slope1,beta_slope2)
-save(indv_params,file='modeling/results/indv_params_alpha_beta_bias_Qdiffcard.Rdata')
+indv_params<-data.frame(prolific_id=subjects_list,alpha_card,alpha_teacher,beta,bias_intercept,bias_slope1,bias_slope2)
+save(indv_params,file='modeling/results/indv_params_alpha_beta_bias_Qdiffcard_Qdiffteacher.Rdata')
+
+
 
 

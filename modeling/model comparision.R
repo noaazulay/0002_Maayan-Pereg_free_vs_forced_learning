@@ -5,10 +5,16 @@ my_models = c("modeling/results/model_fit_alpha_beta_bias.rds",
 
 model_alpha_beta_bias<-readRDS(my_models[1])
 model_alpha_beta_bias_Qcarddiff<-readRDS(my_models[2])
+model_alpha_beta_bias_Qcarddiff_teacher<-readRDS(my_models[3])
 
 
 library(loo)
-          
+loo1_loglike<-extract_log_lik(model_alpha_beta_bias, parameter_name = "log_lik", merge_chains = TRUE) 
+loo1_loglike_vector<-as.vector(loo1_loglike)
+loo1_r_eff <- relative_eff(exp(loo1_loglike_vector), cores = 4)
+loo_1 <- loo(log_lik_1, r_eff = r_eff, cores = 2)
+
+
 loo_1<-loo(model_alpha_beta_bias,
     pars = "log_lik",
     save_psis = FALSE,

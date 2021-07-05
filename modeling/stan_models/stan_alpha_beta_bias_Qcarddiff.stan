@@ -98,14 +98,14 @@ transformed parameters {
         
         for (trial in 1:Ntrials_per_subject[subject]){
             
-            //calculate integrated Qvalues based on student and teacher internal values            
+            //calculate integrated Qvalues based on student and teacher internal values
+            
             Qnet[1]= Qcard[offer1[subject,trial]];
             Qnet[2]= Qcard[offer2[subject,trial]];
-            
+            if (reveal[subject,trial]==1) {
             bias[subject]=bias_intercept[subject]+bias_slope1[subject]*(fabs(Qnet[1]-Qnet[2]));
-            
             Qnet[raffle_teacher_ch[subject,trial]]=Qnet[raffle_teacher_ch[subject,trial]]+bias[subject];
-
+            }
             //liklihood function (softmax)
             log_lik[subject,trial]=log_softmax(Qnet*beta[subject])[raffle_student_ch[subject,trial]];
 
