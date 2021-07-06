@@ -69,7 +69,7 @@ my_models = c("modeling/stan_models/stan_alpha_beta_bias.stan",
               "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff.stan",
               "modeling/stan_models/stan_alpha_beta_bias_Qcarddiff_Qteacherdiff.stan")
 
-rl_fit<- stan(file = my_models[3], 
+rl_fit<- stan(file = my_models[2], 
               data=data_for_stan, 
               iter=2000,                          #number of warmup=0.5*iter
               chains=4,
@@ -80,7 +80,7 @@ rl_fit<- stan(file = my_models[3],
 end_time <- Sys.time()
 
 #save results
-#saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias_Qdiffcard_Qdiffteacher.rds')
+saveRDS(rl_fit,file='modeling/results/model_fit_alpha_beta_bias_Qdiffcard.rds')
 
 
 # examine mcmc ----------------------------------------------------------------------------
