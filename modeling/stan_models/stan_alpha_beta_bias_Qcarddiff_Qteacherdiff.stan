@@ -110,18 +110,22 @@ transformed parameters {
             Qnet[1]= Qcard[offer1[subject,trial]];
             Qnet[2]= Qcard[offer2[subject,trial]];
             
+            if (reveal[subject,trial]==1) {
             bias[subject]=bias_intercept[subject]+bias_slope1[subject]*(fabs(Qnet[1]-Qnet[2]))+bias_slope2[subject]*(Qteacher[2]-Qteacher[1]);
-            
             Qnet[raffle_teacher_ch[subject,trial]]=Qnet[raffle_teacher_ch[subject,trial]]+bias[subject];
+            }
 
             //liklihood function (softmax)
             log_lik[subject,trial]=log_softmax(Qnet*beta[subject])[raffle_student_ch[subject,trial]];
 
             //Qvalues update
             PEcard   = reward[subject,trial] - Qcard[student_ch[subject,trial]];
-            PEteacher= reward[subject,trial] - Qteacher[follow[subject,trial]+1];
             Qcard[student_ch[subject,trial]] += alpha_card[subject] * PEcard;
+
+            if (reveal[subject,trial]==1) {
+            PEteacher= reward[subject,trial] - Qteacher[follow[subject,trial]+1];
             Qteacher[follow[subject,trial]+1]+= alpha_teacher[subject] * PEteacher;
+            }
       } 
   }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
