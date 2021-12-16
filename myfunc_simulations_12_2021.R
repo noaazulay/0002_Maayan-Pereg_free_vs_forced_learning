@@ -1,9 +1,10 @@
-
-sim.block = function(par,cfg,sub){ ## additive model
-  Nblk          =cfg$Nblk
+### I would add a code goal
+### which file in the github runs the code?
+sim.block = function(par,cfg,sub){ ## additive model (### Is it simblock or simdata?)
+  Nblk          =cfg$Nblk ###Nblock
   Subject       = sub
   Nalt          = cfg$Nalt
-  Ntrl          = cfg$Ntrl
+  Ntrl          = cfg$Ntrl ###Ntrial
   rndwlk_teacher= cfg$rndwlk_teacher
   teacher.rate  = cfg$teacher.rate #initial instructions rate
   shown_frac    = cfg$shown_frac # how many cards from the deck are presented
@@ -38,7 +39,7 @@ sim.block = function(par,cfg,sub){ ## additive model
       instructions.rate[t] = pInst[1]
       
       #teacher choice (0-no advice, 1 to Nalt - which advice)
-      expval                 <- rndwlk_frac[1:Nalt,t]
+      expval                 <- rndwlk_frac[1:Nalt,t] ###where is rndwlk_frac defined?
       beta.teacher           <- rndwlk_teacher[b,t]
       raffle[t,1:shown_frac] = sample(1:Nalt,shown_frac,prob=rep(1/Nalt,Nalt))
       cards.reveal           = c()
